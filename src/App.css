@@ -214,6 +214,28 @@ button {
   font-weight: 700;
 }
 
+.btn.primary.denied,
+.btn.key-dissect.denied {
+  background: color-mix(in srgb, var(--danger) 35%, var(--panel-2));
+  border-color: color-mix(in srgb, var(--danger) 65%, var(--line));
+  color: #ffc9cd;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.key-dissect[aria-disabled='true']:not(.denied) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.key-dissect.denied {
+  opacity: 1;
+}
+
+.key-card.denied {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+}
+
 .btn.ghost {
   background: transparent;
 }

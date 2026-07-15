@@ -66,25 +66,15 @@ export default function App() {
   }
 
   function onDissectKey(index: number) {
-    if (selectedFace === null) {
-      setMessage('Pick a shape first.')
-      return
-    }
+    if (selectedFace === null) return
     if (!pool.includes(selectedFace)) {
       setMessage('Shape missing — refresh pool.')
       return
     }
-    if (!pairContains(keys[index], selectedFace)) {
-      setMessage(`No ${FACE_LABEL[selectedFace]} on this key.`)
-      return
-    }
+    if (!pairContains(keys[index], selectedFace)) return
+    if (pending && index === pending.keyIndex) return
 
     if (pending) {
-      if (index === pending.keyIndex) {
-        setMessage('Dissect a different key.')
-        return
-      }
-
       const next = transferFaces(
         keys,
         pending.keyIndex,
@@ -112,6 +102,17 @@ export default function App() {
     setPending({ keyIndex: index, face })
     setSelectedFace(null)
     setMessage(`Holding ${FACE_LABEL[face]} — pick shape & Dissect another key`)
+  }
+
+  function deniedReasonForKey(index: number): string | null {
+    if (selectedFace === null) return null
+    if (pending && index === pending.keyIndex) {
+      return 'Denied: Pick a different key'
+    }
+    if (!pairContains(keys[index], selectedFace)) {
+      return `Denied: No ${FACE_LABEL[selectedFace].toLowerCase()} on key`
+    }
+    return null
   }
 
   function cancelPending() {
@@ -211,17 +212,22 @@ export default function App() {
         </section>
 
         <section className="keys-row" aria-label="Keys">
-          {keys.map((pair, i) => (
-            <KeyViewport
-              key={`${i}-${pair.join('-')}`}
-              pair={pair}
-              door={doors[i]}
-              open={openFlags[i]}
-              pending={pending?.keyIndex === i}
-              dissectDisabled={selectedFace === null}
-              onDissect={() => onDissectKey(i)}
-            />
-          ))}
+          {keys.map((pair, i) => {
+            const deniedReason = deniedReasonForKey(i)
+            return (
+              <KeyViewport
+                key={`${i}-${pair.join('-')}`}
+                pair={pair}
+                door={doors[i]}
+                open={openFlags[i]}
+                pending={pending?.keyIndex === i}
+                idle={selectedFace === null}
+                deniedReason={deniedReason}
+                onDeniedHover={(reason) => setMessage(reason)}
+                onDissect={() => onDissectKey(i)}
+              />
+            )
+          })}
         </section>
 
         {solved && (

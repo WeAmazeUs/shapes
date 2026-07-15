@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import type { Face, KeyPair } from '../types'
@@ -11,8 +12,12 @@ interface KeyViewportProps {
   door: Face
   open: boolean
   pending?: boolean
-  dissectDisabled?: boolean
+  /** No shape selected yet */
+  idle?: boolean
+  /** Shape selected but cannot dissect this key */
+  deniedReason?: string | null
   onDissect: () => void
+  onDeniedHover?: (reason: string) => void
 }
 
 export function KeyViewport({
@@ -20,15 +25,23 @@ export function KeyViewport({
   door,
   open,
   pending,
-  dissectDisabled,
+  idle = false,
+  deniedReason = null,
   onDissect,
+  onDeniedHover,
 }: KeyViewportProps) {
   const name = keyNameFromPair(pair)
   const label = KEY_LABEL[name]
   const faces = `${pair[0][0].toUpperCase()}+${pair[1][0].toUpperCase()}`
+  const canDeny = Boolean(deniedReason)
+  const blocked = idle || canDeny
+  const [hoverDenied, setHoverDenied] = useState(false)
+  const showDenied = canDeny && hoverDenied
 
   return (
-    <div className={`key-card${pending ? ' pending' : ''}`}>
+    <div
+      className={`key-card${pending ? ' pending' : ''}${showDenied ? ' denied' : ''}`}
+    >
       <DoorMarker face={door} open={open} />
       <div className="key-canvas" title="Drag to rotate">
         <Canvas
@@ -61,18 +74,29 @@ export function KeyViewport({
       </div>
       <button
         type="button"
-        className="btn primary key-dissect"
-        onClick={onDissect}
-        disabled={dissectDisabled}
+        className={`btn primary key-dissect${showDenied ? ' denied' : ''}${blocked ? ' blocked' : ''}`}
+        onClick={() => {
+          if (blocked) return
+          onDissect()
+        }}
+        aria-disabled={blocked}
+        onMouseEnter={() => {
+          if (!deniedReason) return
+          setHoverDenied(true)
+          onDeniedHover?.(deniedReason)
+        }}
+        onMouseLeave={() => setHoverDenied(false)}
         title={
-          dissectDisabled
+          idle
             ? 'Select a pool shape first'
-            : pending
-              ? 'Dissect to complete exchange'
-              : 'Dissect selected shape from this key'
+            : deniedReason
+              ? deniedReason
+              : pending
+                ? 'Dissect to complete exchange'
+                : 'Dissect selected shape from this key'
         }
       >
-        Dissect
+        {showDenied ? 'Denied' : 'Dissect'}
       </button>
     </div>
   )
