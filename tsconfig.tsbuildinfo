@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/doormarker.tsx","./src/components/keymesh.tsx","./src/components/keyviewport.tsx","./src/components/shapeicon.tsx","./src/logic/puzzle.ts"],"version":"5.9.3"}
