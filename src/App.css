@@ -1,10 +1,10 @@
 :root {
-  --ink: #0e141c;
-  --panel: #15202c;
-  --panel-2: #1c2a3a;
-  --line: #2c3e52;
-  --text: #e7eef6;
-  --muted: #93a4b8;
+  --ink: #0b1017;
+  --panel: #121a24;
+  --panel-2: #182433;
+  --line: #2a3b4f;
+  --text: #e8eef6;
+  --muted: #8fa3b8;
   --accent: #4fd1c5;
   --ok: #22c55e;
   --danger: #ef4444;
@@ -12,8 +12,9 @@
   --face-circle: #3d8bfd;
   --face-triangle: #e8a54b;
   --face-square: #b57bff;
-  --shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
-  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+  --shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  --radius: 12px;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
   color: var(--text);
   background: var(--ink);
 }
@@ -32,8 +33,8 @@ body,
 body {
   min-height: 100vh;
   background:
-    radial-gradient(1000px 500px at 50% -8%, #24374c 0%, transparent 55%),
-    linear-gradient(180deg, #0b1017 0%, #121a24 45%, #0b1017 100%);
+    radial-gradient(900px 480px at 50% -12%, #1c2d40 0%, transparent 58%),
+    linear-gradient(180deg, #080d13 0%, #101820 50%, #080d13 100%);
 }
 
 button {
@@ -45,11 +46,11 @@ button {
 }
 
 .stage {
-  width: min(1000px, calc(100% - 1.5rem));
+  width: min(1040px, calc(100% - 1.5rem));
   margin: 0 auto;
-  padding: 0.85rem 0 1.25rem;
+  padding: 1rem 0 1.5rem;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .header {
@@ -58,13 +59,16 @@ button {
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
 }
 
 .header h1 {
   margin: 0;
-  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
-  letter-spacing: 0.02em;
+  font-family: Syne, "IBM Plex Sans", sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.7rem, 3.5vw, 2.25rem);
+  letter-spacing: -0.02em;
   line-height: 1;
   cursor: help;
 }
@@ -81,7 +85,8 @@ button {
   gap: 0.4rem;
   align-items: center;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
   cursor: help;
 }
 
@@ -106,6 +111,12 @@ button {
   cursor: pointer;
   color: var(--muted);
   font-weight: 700;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.help summary:hover {
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 .help summary::-webkit-details-marker {
@@ -122,38 +133,47 @@ button {
   list-style: none;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
   white-space: nowrap;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1.55;
 }
 
-.pool-row {
+.toolbar {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.pool-tray {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 0.55rem;
-  background: color-mix(in srgb, var(--panel) 92%, black);
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: color-mix(in srgb, var(--panel) 88%, black);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
 .pool-shapes {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .shape-icon {
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  border: 2px solid transparent;
+  border-radius: 10px;
+  border: 1px solid transparent;
   background: var(--panel-2);
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .shape-icon.decorative {
@@ -162,12 +182,13 @@ button {
 
 .shape-icon:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
 }
 
 .shape-icon.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  animation: select-pulse 1.4s ease infinite;
 }
 
 .shape-icon.disabled,
@@ -175,14 +196,25 @@ button {
   opacity: 0.22;
   cursor: default;
   transform: none;
+  animation: none;
+}
+
+@keyframes select-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
 }
 
 .status {
   margin: 0;
   color: var(--muted);
-  font-size: 0.85rem;
-  flex: 1;
-  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  min-height: 1.2em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -195,10 +227,15 @@ button {
   border-radius: 999px;
   padding: 0.4rem 0.85rem;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease,
+    color 0.15s ease;
 }
 
-.btn:hover:not(:disabled) {
+.btn:hover:not(:disabled):not([aria-disabled='true']) {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
 }
 
@@ -211,7 +248,6 @@ button {
   background: linear-gradient(180deg, #3eb8ac 0%, #2a9d8f 100%);
   border-color: #3eb8ac;
   color: #041310;
-  font-weight: 700;
 }
 
 .btn.primary.denied,
@@ -221,6 +257,20 @@ button {
   color: #ffc9cd;
   opacity: 1;
   cursor: not-allowed;
+  animation: deny-shake 0.28s ease;
+}
+
+@keyframes deny-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
 }
 
 .key-dissect[aria-disabled='true']:not(.denied) {
@@ -232,8 +282,8 @@ button {
   opacity: 1;
 }
 
-.key-card.denied {
-  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+.btn.key-dissect.press:not(.denied):not(.blocked) {
+  transform: scale(0.97);
 }
 
 .btn.ghost {
@@ -241,38 +291,89 @@ button {
 }
 
 .btn.refresh {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
-  border-radius: 12px;
-  font-size: 1.2rem;
+  border-radius: 10px;
+  font-size: 1.15rem;
   line-height: 1;
   flex-shrink: 0;
+}
+
+.altar {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.65rem 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 35%),
+    color-mix(in srgb, var(--panel) 92%, black);
+  box-shadow: var(--shadow);
+}
+
+.altar-rule {
+  height: 1px;
+  margin: 0 0.35rem;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 45%, var(--line)),
+    transparent
+  );
 }
 
 .keys-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .key-card {
   display: grid;
   justify-items: center;
   gap: 0.4rem;
-  padding: 0.55rem;
-  border-radius: 14px;
-  border: 2px solid var(--line);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
-    var(--panel);
-  box-shadow: var(--shadow);
-  transition: border-color 0.15s ease;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }
 
 .key-card.pending {
   border-color: var(--warn);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--warn) 22%, transparent), var(--shadow);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn) 30%, transparent);
+}
+
+.key-card.denied {
+  border-color: color-mix(in srgb, var(--danger) 50%, var(--line));
+}
+
+.key-card.door-open {
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+}
+
+.key-card.flash .key-canvas {
+  animation: canvas-swap 0.35s ease;
+}
+
+@keyframes canvas-swap {
+  0% {
+    opacity: 0.35;
+    filter: brightness(1.35);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+.app.solved .key-card {
+  border-color: color-mix(in srgb, var(--ok) 55%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 18%, transparent);
 }
 
 .door-marker {
@@ -285,7 +386,7 @@ button {
   paint-order: stroke fill;
   stroke: rgba(8, 12, 18, 0.75);
   stroke-width: 2px;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
 }
 
 .key-dissect {
@@ -294,12 +395,13 @@ button {
 
 .key-canvas {
   width: 100%;
-  height: 260px;
+  height: 290px;
   border-radius: 10px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 20%, rgba(79, 209, 197, 0.12), transparent 45%),
-    linear-gradient(180deg, #101822, #0c1219);
+    radial-gradient(circle at 50% 18%, rgba(79, 209, 197, 0.1), transparent 48%),
+    linear-gradient(180deg, #0e1620, #090e14);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 }
 
 .key-meta {
@@ -308,28 +410,45 @@ button {
   width: 100%;
   gap: 0.4rem;
   padding: 0 0.1rem;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .key-name {
+  font-family: Syne, "IBM Plex Sans", sans-serif;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .key-faces {
   color: var(--muted);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .win-banner {
   text-align: center;
-  padding: 0.55rem 0.75rem;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--ok) 18%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--ok) 55%, var(--line));
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ok) 16%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--ok) 50%, var(--line));
   color: #d9ffe6;
+  font-family: Syne, "IBM Plex Sans", sans-serif;
   font-weight: 700;
+  letter-spacing: 0.02em;
+  animation: win-rise 0.45s ease;
+}
+
+@keyframes win-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (max-width: 860px) {
@@ -338,17 +457,16 @@ button {
   }
 
   .key-canvas {
-    height: 280px;
+    height: 320px;
   }
 }
 
 @media (max-width: 560px) {
-  .pool-row {
+  .pool-tray {
     flex-wrap: wrap;
   }
 
   .status {
-    flex-basis: 100%;
     white-space: normal;
   }
 }

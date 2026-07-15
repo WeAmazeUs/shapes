@@ -5,13 +5,17 @@ import type { Face, KeyPair } from '../types'
 import { FACE_COLOR, FACE_EDGE_COLOR } from '../types'
 import { keyNameFromPair } from '../logic/puzzle'
 
-const FACE_OPACITY = 0.5
+const FACE_OPACITY = 0.65
 
 function mat(face: Face, side: THREE.Side = THREE.DoubleSide) {
-  return new THREE.MeshStandardMaterial({
+  return new THREE.MeshPhysicalMaterial({
     color: FACE_COLOR[face],
-    metalness: 0.15,
-    roughness: 0.45,
+    metalness: 0.05,
+    roughness: 0.28,
+    transmission: 0.12,
+    thickness: 0.4,
+    clearcoat: 0.55,
+    clearcoatRoughness: 0.35,
     transparent: true,
     opacity: FACE_OPACITY,
     depthWrite: false,
@@ -24,7 +28,7 @@ function FaceEdges({ face, threshold = 20 }: { face: Face; threshold?: number })
     <Edges
       threshold={threshold}
       color={FACE_EDGE_COLOR[face]}
-      scale={1.002}
+      scale={1.003}
     />
   )
 }

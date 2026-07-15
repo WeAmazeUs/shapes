@@ -24,12 +24,18 @@ export default function App() {
   const [selectedFace, setSelectedFace] = useState<Face | null>(null)
   const [pending, setPending] = useState<PendingDissect | null>(null)
   const [message, setMessage] = useState('Pick a shape, then Dissect.')
+  const [flashKeys, setFlashKeys] = useState<number[]>([])
 
   const openFlags = useMemo(
     () => keys.map((k, i) => opensDoor(k, doors[i])),
     [keys, doors],
   )
   const solved = openFlags.every(Boolean)
+
+  function pulseKeys(indices: number[]) {
+    setFlashKeys(indices)
+    window.setTimeout(() => setFlashKeys([]), 380)
+  }
 
   function newPuzzle(nextRequire = requireDoorSymbol) {
     const puzzle = generatePuzzle(nextRequire)
@@ -38,6 +44,7 @@ export default function App() {
     setPool(freshPool())
     setSelectedFace(null)
     setPending(null)
+    setFlashKeys([])
     setMessage('Pick a shape, then Dissect.')
   }
 
@@ -89,6 +96,7 @@ export default function App() {
 
       consumeFace(selectedFace)
       setKeys(next)
+      pulseKeys([pending.keyIndex, index])
       setPending(null)
       setSelectedFace(null)
       setMessage(
@@ -100,6 +108,7 @@ export default function App() {
     const face = selectedFace
     consumeFace(face)
     setPending({ keyIndex: index, face })
+    pulseKeys([index])
     setSelectedFace(null)
     setMessage(`Holding ${FACE_LABEL[face]} — pick shape & Dissect another key`)
   }
@@ -127,7 +136,7 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${solved ? ' solved' : ''}`}>
       <main className="stage">
         <header className="header">
           <h1 title="Open each door with a key that has none of that door's shape">
@@ -171,70 +180,75 @@ export default function App() {
           </div>
         </header>
 
-        <section className="pool-row" aria-label="Shape pool">
-          <div className="pool-shapes">
-            {FACE_ORDER.map((face) => {
-              const available = pool.includes(face)
-              return (
-                <ShapeIcon
-                  key={face}
-                  face={face}
-                  size={52}
-                  selected={selectedFace === face}
-                  disabled={!available}
-                  onClick={() => onPickFace(face)}
-                  title={FACE_LABEL[face]}
-                />
-              )
-            })}
-          </div>
-          <button
-            type="button"
-            className="btn refresh"
-            onClick={refreshPool}
-            title="Refresh pool shapes"
-          >
-            ↻
-          </button>
-          {pending && (
+        <section className="toolbar" aria-label="Shape pool">
+          <div className="pool-tray">
+            <div className="pool-shapes">
+              {FACE_ORDER.map((face) => {
+                const available = pool.includes(face)
+                return (
+                  <ShapeIcon
+                    key={face}
+                    face={face}
+                    size={48}
+                    selected={selectedFace === face}
+                    disabled={!available}
+                    onClick={() => onPickFace(face)}
+                    title={FACE_LABEL[face]}
+                  />
+                )
+              })}
+            </div>
             <button
               type="button"
-              className="btn ghost"
-              onClick={cancelPending}
-              title="Cancel current dissect"
+              className="btn refresh"
+              onClick={refreshPool}
+              title="Refresh pool shapes"
             >
-              Cancel
+              ↻
             </button>
-          )}
+            {pending && (
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={cancelPending}
+                title="Cancel current dissect"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
           <p className="status" title={message}>
             {message}
           </p>
         </section>
 
-        <section className="keys-row" aria-label="Keys">
-          {keys.map((pair, i) => {
-            const deniedReason = deniedReasonForKey(i)
-            return (
-              <KeyViewport
-                key={`${i}-${pair.join('-')}`}
-                pair={pair}
-                door={doors[i]}
-                open={openFlags[i]}
-                pending={pending?.keyIndex === i}
-                idle={selectedFace === null}
-                deniedReason={deniedReason}
-                onDeniedHover={(reason) => setMessage(reason)}
-                onDissect={() => onDissectKey(i)}
-              />
-            )
-          })}
-        </section>
-
-        {solved && (
-          <div className="win-banner" role="status">
-            All doors open
+        <section className="altar" aria-label="Keys">
+          <div className="altar-rule" aria-hidden />
+          <div className="keys-row">
+            {keys.map((pair, i) => {
+              const deniedReason = deniedReasonForKey(i)
+              return (
+                <KeyViewport
+                  key={`slot-${i}`}
+                  pair={pair}
+                  door={doors[i]}
+                  open={openFlags[i]}
+                  pending={pending?.keyIndex === i}
+                  flash={flashKeys.includes(i)}
+                  idle={selectedFace === null}
+                  deniedReason={deniedReason}
+                  onDeniedHover={(reason) => setMessage(reason)}
+                  onDissect={() => onDissectKey(i)}
+                />
+              )
+            })}
           </div>
-        )}
+          {solved && (
+            <div className="win-banner" role="status">
+              All doors open
+            </div>
+          )}
+        </section>
       </main>
     </div>
   )
