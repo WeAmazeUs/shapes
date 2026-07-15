@@ -1,16 +1,32 @@
 import { useMemo } from 'react'
+import { Edges } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Face, KeyPair } from '../types'
-import { FACE_COLOR } from '../types'
+import { FACE_COLOR, FACE_EDGE_COLOR } from '../types'
 import { keyNameFromPair } from '../logic/puzzle'
 
-function mat(face: Face, side: THREE.Side = THREE.FrontSide) {
+const FACE_OPACITY = 0.5
+
+function mat(face: Face, side: THREE.Side = THREE.DoubleSide) {
   return new THREE.MeshStandardMaterial({
     color: FACE_COLOR[face],
-    metalness: 0.22,
-    roughness: 0.42,
+    metalness: 0.15,
+    roughness: 0.45,
+    transparent: true,
+    opacity: FACE_OPACITY,
+    depthWrite: false,
     side,
   })
+}
+
+function FaceEdges({ face, threshold = 20 }: { face: Face; threshold?: number }) {
+  return (
+    <Edges
+      threshold={threshold}
+      color={FACE_EDGE_COLOR[face]}
+      scale={1.002}
+    />
+  )
 }
 
 function SphereKey({ pair }: { pair: KeyPair }) {
@@ -20,9 +36,21 @@ function SphereKey({ pair }: { pair: KeyPair }) {
     <group>
       <mesh material={top}>
         <sphereGeometry args={[1.05, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <FaceEdges face={pair[0]} threshold={1} />
       </mesh>
       <mesh material={bottom} rotation={[Math.PI, 0, 0]}>
         <sphereGeometry args={[1.05, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <FaceEdges face={pair[1]} threshold={1} />
+      </mesh>
+      {/* Equator seam between the two face colors */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.04, 1.06, 64]} />
+        <meshBasicMaterial
+          color={FACE_EDGE_COLOR[pair[0]]}
+          transparent
+          opacity={0.9}
+          side={THREE.DoubleSide}
+        />
       </mesh>
     </group>
   )
@@ -35,6 +63,7 @@ function CubeKey({ pair }: { pair: KeyPair }) {
   return (
     <mesh material={materials}>
       <boxGeometry args={[1.55, 1.55, 1.55]} />
+      <FaceEdges face={pair[0]} />
     </mesh>
   )
 }
@@ -50,8 +79,8 @@ function triGeom(a: number[], b: number[], c: number[]) {
 }
 
 function PyramidKey({ pair }: { pair: KeyPair }) {
-  const m0 = useMemo(() => mat(pair[0], THREE.DoubleSide), [pair])
-  const m1 = useMemo(() => mat(pair[1], THREE.DoubleSide), [pair])
+  const m0 = useMemo(() => mat(pair[0]), [pair])
+  const m1 = useMemo(() => mat(pair[1]), [pair])
 
   const faces = useMemo(() => {
     const apex = [0, 1.15, 0]
@@ -67,12 +96,15 @@ function PyramidKey({ pair }: { pair: KeyPair }) {
     ]
   }, [])
 
+  const faceColors: Face[] = [pair[0], pair[1], pair[0], pair[1]]
+
   return (
     <group>
-      <mesh geometry={faces[0]} material={m0} />
-      <mesh geometry={faces[1]} material={m1} />
-      <mesh geometry={faces[2]} material={m0} />
-      <mesh geometry={faces[3]} material={m1} />
+      {faces.map((geometry, i) => (
+        <mesh key={i} geometry={geometry} material={i % 2 === 0 ? m0 : m1}>
+          <FaceEdges face={faceColors[i]} />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -86,9 +118,11 @@ function ConeKey({ pair }: { pair: KeyPair }) {
     <group>
       <mesh material={body} position={[0, 0.1, 0]}>
         <coneGeometry args={[1.05, 1.9, 48, 1, true]} />
+        <FaceEdges face={bodyFace} threshold={1} />
       </mesh>
       <mesh material={base} rotation={[Math.PI / 2, 0, 0]} position={[0, -0.85, 0]}>
         <circleGeometry args={[1.05, 48]} />
+        <FaceEdges face={baseFace} threshold={1} />
       </mesh>
     </group>
   )
@@ -103,12 +137,15 @@ function CylinderKey({ pair }: { pair: KeyPair }) {
     <group>
       <mesh material={side}>
         <cylinderGeometry args={[0.95, 0.95, 1.75, 48, 1, true]} />
+        <FaceEdges face={sideFace} threshold={1} />
       </mesh>
       <mesh material={cap} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.875, 0]}>
         <circleGeometry args={[0.95, 48]} />
+        <FaceEdges face={capFace} threshold={1} />
       </mesh>
       <mesh material={cap} rotation={[Math.PI / 2, 0, 0]} position={[0, -0.875, 0]}>
         <circleGeometry args={[0.95, 48]} />
+        <FaceEdges face={capFace} threshold={1} />
       </mesh>
     </group>
   )
@@ -117,7 +154,7 @@ function CylinderKey({ pair }: { pair: KeyPair }) {
 function PrismKey({ pair }: { pair: KeyPair }) {
   const endFace: Face = pair.includes('triangle') ? 'triangle' : pair[0]
   const sideFace: Face = pair.includes('square') ? 'square' : pair[1]
-  const end = useMemo(() => mat(endFace, THREE.DoubleSide), [endFace])
+  const end = useMemo(() => mat(endFace), [endFace])
   const side = useMemo(() => mat(sideFace), [sideFace])
 
   const shape = useMemo(() => {
@@ -134,13 +171,18 @@ function PrismKey({ pair }: { pair: KeyPair }) {
   return (
     <group rotation={[0, Math.PI / 2, Math.PI / 2]}>
       <mesh material={side} position={[0, 0, -length / 2]}>
-        <extrudeGeometry args={[shape, { depth: length, bevelEnabled: false }]} />
+        <extrudeGeometry
+          args={[shape, { depth: length, bevelEnabled: false, steps: 1 }]}
+        />
+        <FaceEdges face={sideFace} />
       </mesh>
       <mesh material={end} position={[0, 0, -length / 2]}>
         <shapeGeometry args={[shape]} />
+        <FaceEdges face={endFace} />
       </mesh>
       <mesh material={end} position={[0, 0, length / 2]} rotation={[0, Math.PI, 0]}>
         <shapeGeometry args={[shape]} />
+        <FaceEdges face={endFace} />
       </mesh>
     </group>
   )

@@ -1,5 +1,5 @@
 import type { Face } from '../types'
-import { FACE_COLOR, FACE_LABEL } from '../types'
+import { DOOR_MARK_COLOR, FACE_COLOR, FACE_LABEL } from '../types'
 
 interface DoorMarkerProps {
   face: Face
@@ -12,6 +12,7 @@ export function DoorMarker({ face, open, size = 56 }: DoorMarkerProps) {
   const mark = open ? '✓' : '✗'
   const status = open ? 'open' : 'closed'
   const title = `${FACE_LABEL[face]} door — ${status}`
+  const markColor = open ? DOOR_MARK_COLOR.open : DOOR_MARK_COLOR.closed
 
   return (
     <div
@@ -34,7 +35,8 @@ export function DoorMarker({ face, open, size = 56 }: DoorMarkerProps) {
           textAnchor="middle"
           dominantBaseline="middle"
           className="door-mark"
-          fontSize="15"
+          fill={markColor}
+          fontSize="16"
           fontWeight="800"
         >
           {mark}

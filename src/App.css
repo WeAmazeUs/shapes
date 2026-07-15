@@ -6,9 +6,12 @@
   --text: #e7eef6;
   --muted: #93a4b8;
   --accent: #4fd1c5;
-  --danger: #f07178;
-  --ok: #7fd99a;
+  --ok: #22c55e;
+  --danger: #ef4444;
   --warn: #e8a54b;
+  --face-circle: #3d8bfd;
+  --face-triangle: #e8a54b;
+  --face-square: #b57bff;
   --shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
   font-family: "Segoe UI", "Trebuchet MS", sans-serif;
   color: var(--text);
@@ -258,17 +261,9 @@ button {
 
 .door-marker .door-mark {
   paint-order: stroke fill;
-  stroke: rgba(8, 12, 18, 0.55);
-  stroke-width: 1.4px;
+  stroke: rgba(8, 12, 18, 0.75);
+  stroke-width: 2px;
   font-family: "Segoe UI", system-ui, sans-serif;
-}
-
-.door-marker.open .door-mark {
-  fill: #052414;
-}
-
-.door-marker.closed .door-mark {
-  fill: #2a070c;
 }
 
 .key-dissect {
