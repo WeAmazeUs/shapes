@@ -39,6 +39,49 @@ function countFaces(keys: KeyPair[]): Record<Face, number> {
   return counts
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const out = [...arr]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+const ALL_FACES: Face[] = ['circle', 'triangle', 'square']
+
+/** Each door independently picks Circle, Triangle, or Square. */
+function randomDoors(): Face[] {
+  return [
+    ALL_FACES[Math.floor(Math.random() * 3)],
+    ALL_FACES[Math.floor(Math.random() * 3)],
+    ALL_FACES[Math.floor(Math.random() * 3)],
+  ]
+}
+
+/** Classic: random order of one of each shape. */
+function randomDoorsPermutation(): Face[] {
+  return shuffle([...ALL_FACES])
+}
+
+function isSolved(keys: KeyPair[], doors: Face[]): boolean {
+  return keys.every((k, i) => opensDoor(k, doors[i]))
+}
+
+function hasDoorSymbolInEachKey(keys: KeyPair[], doors: Face[]): boolean {
+  return keys.every((k, i) => pairContains(k, doors[i]))
+}
+
+function permutations<T>(items: T[]): T[][] {
+  if (items.length <= 1) return [items]
+  const out: T[][] = []
+  for (let i = 0; i < items.length; i++) {
+    const rest = items.filter((_, j) => j !== i)
+    for (const p of permutations(rest)) out.push([items[i], ...p])
+  }
+  return out
+}
+
 /** All partitions of {2C,2T,2S} into three unordered pairs. */
 function allBalancedPartitions(): KeyPair[][] {
   const faces: Face[] = [
@@ -60,7 +103,6 @@ function allBalancedPartitions(): KeyPair[][] {
       .join('|')
   }
 
-  // Choose 3 disjoint pairings of 6 indexed faces
   const n = faces.length
   for (let a = 0; a < n; a++) {
     for (let b = a + 1; b < n; b++) {
@@ -90,90 +132,65 @@ function allBalancedPartitions(): KeyPair[][] {
 
 const PARTITIONS = allBalancedPartitions()
 
-function shuffle<T>(arr: T[]): T[] {
-  const out = [...arr]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
-
-function randomDoors(): Face[] {
-  return shuffle(['circle', 'triangle', 'square'])
-}
-
-function isSolved(keys: KeyPair[], doors: Face[]): boolean {
-  return keys.every((k, i) => opensDoor(k, doors[i]))
-}
-
-function hasDoorSymbolInEachKey(keys: KeyPair[], doors: Face[]): boolean {
-  return keys.every((k, i) => pairContains(k, doors[i]))
-}
-
-function permutations<T>(items: T[]): T[][] {
-  if (items.length <= 1) return [items]
-  const out: T[][] = []
-  for (let i = 0; i < items.length; i++) {
-    const rest = items.filter((_, j) => j !== i)
-    for (const p of permutations(rest)) out.push([items[i], ...p])
-  }
-  return out
-}
-
-/** Find an assignment of a partition to door slots that opens all doors. */
-function solvedAssignment(partition: KeyPair[], doors: Face[]): KeyPair[] | null {
-  for (const assigned of permutations(partition)) {
-    if (isSolved(assigned, doors)) return assigned
+/** Find an assignment of balanced keys that opens every door. */
+function findSolvedKeys(doors: Face[]): KeyPair[] | null {
+  const shuffledPartitions = shuffle([...PARTITIONS])
+  for (const partition of shuffledPartitions) {
+    for (const assigned of shuffle(permutations(partition))) {
+      if (isSolved(assigned, doors)) return assigned.map((p) => [...p] as KeyPair)
+    }
   }
   return null
+}
+
+function trySwap(
+  keys: KeyPair[],
+  doors: Face[],
+  requireDoorSymbol: boolean,
+): KeyPair[] | null {
+  const i = Math.floor(Math.random() * 3)
+  let j = Math.floor(Math.random() * 3)
+  if (i === j) j = (j + 1) % 3
+  const faceA = keys[i][Math.floor(Math.random() * 2)]
+  const faceB = keys[j][Math.floor(Math.random() * 2)]
+  const next = keys.map((p) => [...p] as KeyPair)
+  next[i] = replaceFace(next[i], faceA, faceB)
+  next[j] = replaceFace(next[j], faceB, faceA)
+
+  const counts = countFaces(next)
+  if (counts.circle !== 2 || counts.triangle !== 2 || counts.square !== 2) return null
+  if (isSolved(next, doors)) return null
+  if (requireDoorSymbol && !hasDoorSymbolInEachKey(next, doors)) return null
+  return next
 }
 
 function scrambleFromSolved(
   solved: KeyPair[],
   doors: Face[],
   requireDoorSymbol: boolean,
-): KeyPair[] {
+): KeyPair[] | null {
   let keys = solved.map((p) => [...p] as KeyPair)
 
-  // Random face swaps between keys
-  for (let attempt = 0; attempt < 40; attempt++) {
-    const i = Math.floor(Math.random() * 3)
-    let j = Math.floor(Math.random() * 3)
-    if (i === j) j = (j + 1) % 3
-    const faceA = keys[i][Math.floor(Math.random() * 2)]
-    const faceB = keys[j][Math.floor(Math.random() * 2)]
-    const next = keys.map((p) => [...p] as KeyPair)
-    next[i] = replaceFace(next[i], faceA, faceB)
-    next[j] = replaceFace(next[j], faceB, faceA)
-
-    const counts = countFaces(next)
-    if (counts.circle !== 2 || counts.triangle !== 2 || counts.square !== 2) continue
-    if (isSolved(next, doors)) continue
-    if (requireDoorSymbol && !hasDoorSymbolInEachKey(next, doors)) continue
-    keys = next
+  // Wander with accepted swaps
+  for (let attempt = 0; attempt < 120; attempt++) {
+    const next = trySwap(keys, doors, requireDoorSymbol)
+    if (next) keys = next
   }
 
-  // If still solved or fails door-symbol constraint, try more aggressively
-  if (isSolved(keys, doors) || (requireDoorSymbol && !hasDoorSymbolInEachKey(keys, doors))) {
-    for (let attempt = 0; attempt < 200; attempt++) {
-      const i = Math.floor(Math.random() * 3)
-      let j = Math.floor(Math.random() * 3)
-      if (i === j) j = (j + 1) % 3
-      const faceA = keys[i][Math.floor(Math.random() * 2)]
-      const faceB = keys[j][Math.floor(Math.random() * 2)]
-      const next = keys.map((p) => [...p] as KeyPair)
-      next[i] = replaceFace(next[i], faceA, faceB)
-      next[j] = replaceFace(next[j], faceB, faceA)
-      const counts = countFaces(next)
-      if (counts.circle !== 2 || counts.triangle !== 2 || counts.square !== 2) continue
-      if (isSolved(next, doors)) continue
-      if (requireDoorSymbol && !hasDoorSymbolInEachKey(next, doors)) continue
-      return next
-    }
+  if (!isSolved(keys, doors) && (!requireDoorSymbol || hasDoorSymbolInEachKey(keys, doors))) {
+    return keys
   }
 
-  return keys
+  // Search until we find any valid starting position
+  for (let attempt = 0; attempt < 400; attempt++) {
+    const next = trySwap(keys, doors, requireDoorSymbol)
+    if (next) return next
+    // Also try swapping from the solved baseline
+    const fromSolved = trySwap(solved, doors, requireDoorSymbol)
+    if (fromSolved) return fromSolved
+  }
+
+  return null
 }
 
 export interface PuzzleState {
@@ -182,28 +199,36 @@ export interface PuzzleState {
 }
 
 export function generatePuzzle(requireDoorSymbol: boolean): PuzzleState {
-  for (let n = 0; n < 80; n++) {
-    const doors = randomDoors()
-    const partition = PARTITIONS[Math.floor(Math.random() * PARTITIONS.length)]
-    const solved = solvedAssignment(partition, doors)
+  // Prefer fully independent door picks; fall back to a permutation if needed.
+  for (let n = 0; n < 120; n++) {
+    const doors = n < 80 ? randomDoors() : randomDoorsPermutation()
+    const solved = findSolvedKeys(doors)
     if (!solved) continue
     const keys = scrambleFromSolved(solved, doors, requireDoorSymbol)
-    if (isSolved(keys, doors)) continue
-    if (requireDoorSymbol && !hasDoorSymbolInEachKey(keys, doors)) continue
+    if (!keys) continue
     return { doors, keys }
   }
 
-  // Guaranteed fallback: classic solution scrambled once
-  const doors: Face[] = ['circle', 'triangle', 'square']
-  const solved: KeyPair[] = [
+  // Last resort: shuffled doors + classic solved layout scrambled without door-symbol constraint
+  const doors = randomDoorsPermutation()
+  const solved = findSolvedKeys(doors) ?? [
     ['triangle', 'triangle'],
     ['circle', 'circle'],
     ['square', 'square'],
   ]
-  return {
-    doors,
-    keys: scrambleFromSolved(solved, doors, requireDoorSymbol),
+  const keys =
+    scrambleFromSolved(solved, doors, false) ??
+    (solved.map((p) => [...p] as KeyPair) as KeyPair[])
+
+  // If still solved, force one destructive swap ignoring door-symbol option
+  if (isSolved(keys, doors)) {
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const next = trySwap(keys, doors, false)
+      if (next) return { doors, keys: next }
+    }
   }
+
+  return { doors, keys }
 }
 
 export function transferFaces(

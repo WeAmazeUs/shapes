@@ -272,7 +272,7 @@ button {
 
 .key-canvas {
   width: 100%;
-  height: 180px;
+  height: 260px;
   border-radius: 10px;
   overflow: hidden;
   background:
@@ -316,7 +316,7 @@ button {
   }
 
   .key-canvas {
-    height: 200px;
+    height: 280px;
   }
 }
 
